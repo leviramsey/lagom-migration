@@ -3,6 +3,9 @@ write-side and JDBC/Slick for persistence (specifically Postgres)) to Akka Libra
 
 The minimal example Lagom project, suitable for running locally, is in the `lagom-base` branch.
 
+This branch (`local-initialize`) is `lagom-base` with an added hook to exercise entities and persist
+events so that something like an application that has already run can be migrated.
+
 This is presented solely for educational purposes: the code may be reused for any purpose.
 
 Note that the Akka Libraries are licensed under the BSL.
