@@ -1,5 +1,7 @@
 package com.example.meetup.impl.meetup
 
+import com.example.akka.JsonSerializable
+import com.example.akka.JsonSerializer
 import com.example.meetup.impl.JacksonSerializable
 
 import akka.Done
@@ -14,13 +16,12 @@ import akka.persistence.typed.scaladsl.ReplyEffect
 import com.lightbend.lagom.scaladsl.persistence.AggregateEvent
 import com.lightbend.lagom.scaladsl.persistence.AggregateEventTag
 import com.lightbend.lagom.scaladsl.persistence.AkkaTaggerAdapter
-import com.lightbend.lagom.scaladsl.playjson.JsonSerializer
 import play.api.libs.json._
 
 import java.time.Clock
 import java.time.Instant
 
-sealed trait Event extends AggregateEvent[Event] {
+sealed trait Event extends AggregateEvent[Event] with JsonSerializable {
   def aggregateTag = Event.Tag
 }
 
@@ -81,7 +82,7 @@ case class DesignateNextOrganizer(nextOrganizer: String, replyTo: ActorRef[Done]
 case class RegisterAttendee(attendee: String, replyTo: ActorRef[RegistrationResult]) extends Command
 case class UnregisterAttendee(attendee: String, replyTo: ActorRef[Done]) extends Command
 
-sealed trait RegistrationResult
+sealed trait RegistrationResult extends JsonSerializable
 
 object RegistrationResult {
   case object Registered extends RegistrationResult
@@ -142,7 +143,7 @@ object Meetup {
     startTime: Instant,
     endTime: Instant,
     attendees: Set[String]
-  ) {
+  ) extends JsonSerializable {
     def organized: Boolean = (headline.nonEmpty || description.nonEmpty || organizer.nonEmpty)
 
     def processCommand(cmd: Command, clock: Clock): ReplyEffect[Event, State] =
