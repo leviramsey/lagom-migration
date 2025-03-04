@@ -1,5 +1,6 @@
 package com.example.meetup.impl
 
+import com.example.akka.{ JsonSerializerRegistry => AkkaJsonSerializerRegistry }
 import com.example.meetup.api.MeetupService
 
 import akka.cluster.sharding.typed.scaladsl.Entity
@@ -7,7 +8,8 @@ import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import com.lightbend.lagom.scaladsl.persistence.slick.SlickPersistenceComponents
-import com.lightbend.lagom.scaladsl.playjson.JsonSerializerRegistry
+import com.lightbend.lagom.scaladsl.playjson.EmptyJsonSerializerRegistry
+import com.lightbend.lagom.scaladsl.playjson.{ JsonSerializerRegistry => LagomJsonSerializerRegistry }
 import com.lightbend.lagom.scaladsl.server._
 import com.softwaremill.macwire._
 import play.api.db.HikariCPComponents
@@ -33,11 +35,14 @@ abstract class MeetupApplication(context: LagomApplicationContext) extends
     with HikariCPComponents
     with AhcWSComponents {
 
-  actorSystem.log.warning("config: {}", actorSystem.settings.config.getValue("jdbc-snapshot-store"))
+  val _jsonSerializerRegistry = AkkaJsonSerializerRegistry(actorSystem)
+  _jsonSerializerRegistry.registerSerializers(meetup.Meetup.Serializers)
+  _jsonSerializerRegistry.registerSerializers(user.User.Serializers)
+
   override lazy val lagomServer: LagomServer = {
     val serviceImp = wire[MeetupServiceImpl]
     serverFor[MeetupService](serviceImp)
   }
 
-  override lazy val jsonSerializerRegistry: JsonSerializerRegistry = MeetupSerializerRegistry
+  override lazy val jsonSerializerRegistry: LagomJsonSerializerRegistry = EmptyJsonSerializerRegistry
 }

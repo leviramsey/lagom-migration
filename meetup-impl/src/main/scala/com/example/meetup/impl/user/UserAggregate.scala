@@ -1,5 +1,7 @@
 package com.example.meetup.impl.user
 
+import com.example.akka.JsonSerializable
+import com.example.akka.JsonSerializer
 import com.example.meetup.impl.JacksonSerializable
 
 import akka.Done
@@ -14,13 +16,12 @@ import akka.persistence.typed.scaladsl.ReplyEffect
 import com.lightbend.lagom.scaladsl.persistence.AggregateEvent
 import com.lightbend.lagom.scaladsl.persistence.AggregateEventTag
 import com.lightbend.lagom.scaladsl.persistence.AkkaTaggerAdapter
-import com.lightbend.lagom.scaladsl.playjson.JsonSerializer
 import play.api.libs.json._
 
 import java.time.Clock
 import java.time.Instant
 
-sealed trait Event extends AggregateEvent[Event] {
+sealed trait Event extends AggregateEvent[Event] with JsonSerializable {
   def aggregateTag = Event.Tag
 }
 
@@ -89,7 +90,7 @@ case class RecordHandoff(meetup: String, replyTo: ActorRef[HandoffResponse]) ext
 // Projected from the clock
 case class RecordMeetupHappened(meetup: String, replyTo: ActorRef[Done]) extends Command
 
-sealed trait HandoffResponse {
+sealed trait HandoffResponse extends JsonSerializable {
   def isOk: Boolean
 }
 
@@ -204,7 +205,7 @@ object User {
     displayName: String,
     organizedMeetups: Map[String, OrganizedMeetup],
     meetupsAttending: Set[String]
-  ) {
+  ) extends JsonSerializable {
     def meetupsInvolvedWith: Set[String] = meetupsAttending ++ organizedMeetups.keys
 
     def processCommand(cmd: Command, clock: Clock): ReplyEffect[Event, State] =
