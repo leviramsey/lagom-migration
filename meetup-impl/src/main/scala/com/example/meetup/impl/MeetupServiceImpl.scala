@@ -26,8 +26,6 @@ import java.time.Clock
 
 class MeetupServiceImpl(
   clusterSharding: ClusterSharding,
-  readSide: ReadSide,
-  slickReadSide: SlickReadSide,
   system: ActorSystem,
   db: Database
 ) extends MeetupService {
@@ -52,10 +50,16 @@ class MeetupServiceImpl(
   clusterSharding.init(
     Entity(user.User.TypeKey)(entityContext => user.User.create(entityContext)))
 
+  val userToMeetupProjection = new UserToMeetupProjection(typedSystem, meetupEntityRef(_), db)
+  val meetupToUserProjection = new MeetupToUserProjection(typedSystem, userEntityRef(_), db)
+  val meetupToPostgresProjection =
+    new meetup.MeetupToPostgresProjection(typedSystem, meetupRepo, Clock.systemUTC, db)
 
-  readSide.register(new MeetupToUserProcessor(slickReadSide, userEntityRef(_)))
-  readSide.register(new UserToMeetupProcessor(slickReadSide, meetupEntityRef(_)))
-  readSide.register(new meetup.MeetupToPostgresProcessor(slickReadSide, meetupRepo, Clock.systemUTC()))
+  Cluster(system).registerOnMemberUp {
+    userToMeetupProjection.runProjection()
+    meetupToUserProjection.runProjection()
+    meetupToPostgresProjection.runProjection()
+  }
 
   private def meetupEntityRef(meetupId: String): EntityRef[meetup.Command] =
     clusterSharding.entityRefFor(meetup.Meetup.TypeKey, meetupId)
