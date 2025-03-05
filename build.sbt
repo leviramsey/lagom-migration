@@ -8,14 +8,19 @@ ThisBuild / libraryDependencySchemes +=
 
 ThisBuild / resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
-val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.3" % "provided"
-val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1" % Test
-val postgres = "org.postgresql" % "postgresql" % "42.7.5"
-
 val akkaVersion = "2.10.2"
 val akkaHttpVersion = "10.7.0"
 val akkaManagementVersion = "1.6.0"
 val slf4jVersion = "2.0.16"
+val akkaProjectionVersion = "1.6.10"
+
+val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.3" % "provided"
+val scalaTest = "org.scalatest" %% "scalatest" % "3.1.1" % Test
+val postgres = "org.postgresql" % "postgresql" % "42.7.5"
+val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.5.0"
+val alpakkaSlick = "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "9.0.1"
+val akkaProjectionSlick = "com.lightbend.akka" %% "akka-projection-slick" % akkaProjectionVersion
+val akkaProjectionEventsourced = "com.lightbend.akka" %% "akka-projection-eventsourced" % akkaProjectionVersion
 
 val overrideSettings = Seq(
   dependencyOverrides ++= Seq(
@@ -52,7 +57,8 @@ val overrideSettings = Seq(
     "org.slf4j" % "jcl-over-slf4j" % slf4jVersion,
     "org.slf4j" % "jul-to-slf4j" % slf4jVersion,
     "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
-  ))
+  ),
+)
 
 lazy val meetup =
   (project in file("."))
@@ -71,12 +77,17 @@ lazy val `meetup-impl` =
     .enablePlugins(LagomScala)
     .settings(
       libraryDependencies ++= Seq(
-        lagomScaladslPersistenceJdbc,
+        lagomScaladslPersistenceJdbc exclude ("com.github.dnvriend", "akka-persistence-jdbc_2.13"),    // superseded by Lightbend version
         lagomScaladslKafkaBroker,
         lagomScaladslTestKit,
         macwire,
         scalaTest,
-        postgres),
+        postgres,
+        akkaPersistenceJdbc,
+        alpakkaSlick,
+        akkaProjectionSlick,
+        akkaProjectionEventsourced,
+      ),
       scalaVersion := "2.13.16")
     .settings(lagomForkedTestSettings)
     .settings(overrideSettings)
